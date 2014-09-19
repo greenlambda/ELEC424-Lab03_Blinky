@@ -1,0 +1,16 @@
+Lab03: Blinky
+<PUT NAMES HERE>
+
+Part 1: 6
+
+Q1. What is the main role of the linker script? 
+
+Q2. What does the ENTRY command in the linker script do?
+
+Q3. Where in the STM memory map are the three ELF segments placed (i.e. flash, sram, system memory)?
+
+Part 2: 4
+
+Q4. What role does the startup file (startup_stm32f10x_md.s) play?
+
+Q5. Can you get the red LED to flash? Why is this harder? This is a good example of some of the challenges you will face with embedded devices and why the reference manual/STM-examples are key.

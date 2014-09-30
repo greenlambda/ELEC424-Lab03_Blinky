@@ -26,11 +26,11 @@ $(BIN)/%.o: $(SRC)/%.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 flash:
-	@openocd -d0 -f interface/busblaster.cfg -f target/stm32f1x.cfg -c init -c targets -c "reset halt" -c "flash write_image erase blinky.elf" -c "verify_image blinky.elf" -c "reset run" -c shutdown
+	@openocd -d0 -f interface/busblaster.cfg -f target/stm32f1x.cfg -c init -c targets -c "reset halt" -c "flash write_image erase $(BIN)/blinky.elf" -c "verify_image $(BIN)/blinky.elf" -c "reset run" -c shutdown
 
 debug:
 	@xterm -iconic -e openocd -f interface/busblaster.cfg -f target/stm32f1x.cfg -c 'init; targets; reset halt;' &
-	@arm-none-eabi-gdb -ex 'target remote localhost:3333' blinky.elf
+	@arm-none-eabi-gdb -ex 'target remote localhost:3333' $(BIN)/blinky.elf
 	@killall openocd
 
 .PHONY: clean

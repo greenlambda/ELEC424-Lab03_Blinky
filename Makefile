@@ -15,10 +15,11 @@ STM_LIB=./local_install/symlinks/stm_std_libs
 LIBS=$(addprefix $(STM_LIB)/, Libraries/CMSIS/CM3/CoreSupport Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x Libraries/STM32F10x_StdPeriph_Driver/inc Utilities/STM32_EVAL)
 DEPS = $(addprefix $(INC)/, blinky.h stm32f10x_conf.h)
 OBJ = $(BIN)/blinky.o
+ELF = $(BIN)/blinky.elf
 
-all: blinky.elf
+all: $(ELF)
 
-blinky.elf: $(OBJ)
+$(ELF): $(OBJ)
 	$(CC) -T ./linker_script/stm32_flash.ld -o $@ $^ $(CFLAGS)
 
 $(BIN)/%.o: $(SRC)/%.c $(DEPS)
@@ -35,4 +36,5 @@ debug:
 .PHONY: clean
 
 clean:
-	rm -f *.o
+	rm -f $(BIN)/*.o
+	rm -f $(BIN)/*.elf

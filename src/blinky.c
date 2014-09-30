@@ -1,6 +1,7 @@
+#define STM32F10X_MD
+
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
-#include "stm32_eval.h"
 
 GPIO_InitTypeDef GPIO_InitStructure;
 

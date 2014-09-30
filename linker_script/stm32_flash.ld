@@ -3,8 +3,7 @@
 **
 **  File        : stm32_flash.ld
 **
-**  TODO: Change to STM32F103CB
-**  Abstract    : Linker script for STM32F103VB Device with
+**  Abstract    : Linker script for STM32F103CB Device with
 **                128KByte FLASH, 20KByte RAM
 **
 **                Set heap size, stack size and stack location according
@@ -16,7 +15,7 @@
 **
 **  Environment : Atollic TrueSTUDIO(R)
 **
-**  Distribution: The file is distributed “as is,” without any warranty
+**  Distribution: The file is distributed "as is," without any warranty
 **                of any kind.
 **
 **  (c)Copyright Atollic AB.
@@ -133,7 +132,7 @@ SECTIONS
     *(.bss)
     *(.bss*)
     *(COMMON)
-
+l
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;

@@ -9,9 +9,10 @@
  * find their website here:
  * http://visualgdb.com/tutorials/arm/stm32/timers/
  ************************************************/
+#include "blinky.h"
+
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
-#include "blinky.h"
 
 /*
  * Initialize the GPIO which controls the LED

@@ -1,9 +1,22 @@
+/************************************************
+ * Name: blinky.c
+ * Authors: Jeremy Hunt and Christopher Buck
+ * Date: 9-30-14
+ * Description: Blinks the green LED on the crazieflie
+ * 				using timers and interrupts
+ * The structure of this program was based off a reference
+ * describing how to use timers on an STM chip.  You may
+ * find their website here:
+ * http://visualgdb.com/tutorials/arm/stm32/timers/
+ ************************************************/
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
+#include "blinky.h"
 
-GPIO_InitTypeDef GPIO_InitStructure;
-
-void InitializeLEDs() {
+/*
+ * Initialize the GPIO which controls the LED
+ */
+static void InitializeLEDs() {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
 	GPIO_InitTypeDef gpioStructure;
@@ -15,14 +28,17 @@ void InitializeLEDs() {
 	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET);
 }
 
-void InitializeTimer() {
+/*
+ * Initialize the timer and set the clock to the external oscillator
+ */
+static void InitializeTimer() {
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); /* set clock to HSE */
 
 	TIM_TimeBaseInitTypeDef timerInitStructure;
-	timerInitStructure.TIM_Prescaler = 40000;
+	timerInitStructure.TIM_Prescaler = TIM2PRESCALER;
 	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	timerInitStructure.TIM_Period = 200;
+	timerInitStructure.TIM_Period = TIM2PERIOD;
 	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM2, &timerInitStructure);
@@ -30,7 +46,10 @@ void InitializeTimer() {
 	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
 }
 
-void EnableTimerInterrupt() {
+/*
+ * Enable the interrupt for the timer (TIM2)
+ */
+static void EnableTimerInterrupt() {
 	NVIC_InitTypeDef nvicStructure;
 	nvicStructure.NVIC_IRQChannel = TIM2_IRQn;
 	nvicStructure.NVIC_IRQChannelPreemptionPriority = 0;
@@ -39,6 +58,9 @@ void EnableTimerInterrupt() {
 	NVIC_Init(&nvicStructure);
 }
 
+/*
+ * Main function.  Initializes the GPIO, Timers, and
+ */
 int main() {
 	InitializeLEDs();
 	InitializeTimer();
@@ -49,6 +71,10 @@ int main() {
 	}
 }
 
+/*
+ * Interrupt service routine.  This function handles toggling the LED
+ * when the timer throws an update flag.
+ */
 void TIM2_IRQHandler() {
 	static unsigned char stateLED = 0;
 

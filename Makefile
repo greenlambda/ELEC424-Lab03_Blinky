@@ -4,6 +4,7 @@
 # Derived from the crazyflie-firmware Makefile
 
 # Path Definitions
+# This path should point to the STM32 Library directory
 STM_LIB ?= local_install/symlinks/stm_std_libs/
 
 # Project Directories
@@ -22,9 +23,9 @@ PROCESSOR = -mcpu=cortex-m3 -mthumb
 # STM specific info
 STFLAGS = -DSTM32F10X_MD
 STM_BUILD_DIR := $(BUILDDIR)/stm_lib
-STM_CORE = /Libraries/CMSIS/CM3/CoreSupport/
-STM_DEVICE_CORE = /Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/
-STM_DEVICE_PERIPH = /Libraries/STM32F10x_StdPeriph_Driver/
+STM_CORE = /CMSIS/CM3/CoreSupport/
+STM_DEVICE_CORE = /CMSIS/CM3/DeviceSupport/ST/STM32F10x/
+STM_DEVICE_PERIPH = /STM32F10x_StdPeriph_Driver/
 
 # These libary sources will be built into the STM libary for linking
 STM_LIB_PKG = $(BINDIR)/libstm32f10x.a
@@ -72,11 +73,11 @@ $(ELF): $(OBJS) $(STM_LIB_PKG)
 	$(CC) $(CFLAGS) $^ -o $@
 
 # Program .elf into Crazyflie flash memory via the busblaster
-flash:
+flash: $(ELF)
 	@openocd -d0 -f interface/busblaster.cfg -f target/stm32f1x.cfg -c init -c targets -c "reset halt" -c "flash write_image erase $(ELF)" -c "verify_image $(ELF)" -c "reset run" -c shutdown
 
 # Runs OpenOCD, opens GDB terminal, and establishes connection with Crazyflie
-debug:
+debug: $(ELF)
 	@xterm -iconic -e openocd -f interface/busblaster.cfg -f target/stm32f1x.cfg -c 'init; targets; reset halt;' &
 	@arm-none-eabi-gdb -ex 'target remote localhost:3333' $(ELF)
 	@killall openocd

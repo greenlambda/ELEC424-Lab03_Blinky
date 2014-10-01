@@ -3,14 +3,6 @@
 
 GPIO_InitTypeDef GPIO_InitStructure;
 
-/* Private variables ---------------------------------------------------------*/
-TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-TIM_OCInitTypeDef TIM_OCInitStructure;
-TIM_BDTRInitTypeDef TIM_BDTRInitStructure;
-uint16_t TimerPeriod = 0;
-uint16_t Channel1Pulse = 0, Channel2Pulse = 0, Channel3Pulse = 0;
-volatile unsigned char stateLED = 0;
-
 void InitializeLEDs() {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
@@ -58,6 +50,8 @@ int main() {
 }
 
 void TIM2_IRQHandler() {
+	static unsigned char stateLED = 0;
+
 	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 		if (stateLED)

@@ -25,7 +25,7 @@ static void InitializeLEDs() {
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
 
-	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET);
+	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET); /* clear bit; LED on */
 }
 
 /*
@@ -79,11 +79,11 @@ void TIM2_IRQHandler() {
 	static unsigned char stateLED = 0;
 
 	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
-		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+		TIM_ClearITPendingBit(TIM2, TIM_IT_Update); /* clear flag */
 		if (stateLED)
 			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET);
 		else
 			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET);
-		stateLED = 1 - stateLED;
+		stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
 }

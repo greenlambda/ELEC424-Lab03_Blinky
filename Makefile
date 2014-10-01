@@ -31,7 +31,7 @@ STM_LIB_PKG = $(BINDIR)/libstm32f10x.a
 STM_INCLUDES = $(addprefix -I$(STM_LIB), $(STM_CORE) $(STM_DEVICE_CORE) $(STM_DEVICE_PERIPH)/inc/) -include $(INCDIR)/stm32f10x_conf.h
 STM_SOURCES_ASM = $(STM_LIB)/$(STM_DEVICE_CORE)/startup/gcc_ride7/startup_stm32f10x_md.s
 STM_SOURCES_C = $(STM_LIB)/$(STM_DEVICE_CORE)/system_stm32f10x.c \
-	$(wildcard $(STM_LIB)/$(STM_DEVICE_PERIPH)/src/*.c)
+	$(addprefix $(STM_LIB)/$(STM_DEVICE_PERIPH)/src/, stm32f10x_gpio.c stm32f10x_rcc.c stm32f10x_tim.c misc.c)
 STM_OBJS := $(patsubst $(STM_LIB)/%,$(STM_BUILD_DIR)/%,$(STM_SOURCES_C:.c=.o) $(STM_SOURCES_ASM:.s=.o)) 
 STM_DEPS := $(patsubst $(STM_LIB)/%,$(STM_BUILD_DIR)/%,$(STM_SOURCES_C:.c=.d))
 
@@ -97,6 +97,7 @@ clean:
 # file for the rule that is generated for each source file, so that if one of
 # the headers, or the source file changes, the dependency file is also
 # rebuilt. This covers all of the necessary dependencies.
+# Jeremy wrote it.
 $(STM_BUILD_DIR)/%.d: $(STM_LIB)/%.c
 	@mkdir -p $(patsubst %/,%,$(dir $@)) # Create necessary dirs in build
 	$(CC) $(CFLAGS) -M -MF"$@" -MT"$@" -MT"$(@:.d=.o)" "$<"	

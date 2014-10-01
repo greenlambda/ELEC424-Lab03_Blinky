@@ -11,7 +11,7 @@ INCDIR = inc
 BINDIR = bin
 BUILDDIR = build
 SRCDIR = src
-LINKER_SCRIPT = linker_script/
+LINKER_SCRIPT = linker_script
 
 # Compiler 
 CC = arm-none-eabi-gcc
@@ -33,7 +33,7 @@ STM_SOURCES_ASM = $(STM_LIB)/$(STM_DEVICE_CORE)/startup/gcc_ride7/startup_stm32f
 STM_SOURCES_C = $(STM_LIB)/$(STM_DEVICE_CORE)/system_stm32f10x.c \
 	$(wildcard $(STM_LIB)/$(STM_DEVICE_PERIPH)/src/*.c)
 STM_OBJS := $(patsubst $(STM_LIB)/%,$(STM_BUILD_DIR)/%,$(STM_SOURCES_C:.c=.o) $(STM_SOURCES_ASM:.s=.o)) 
-# STM_DEPS := $(addprefix $(BUILDDIR)/%, $(STM_SOURCES:.c=.d))
+STM_DEPS := $(patsubst $(STM_LIB)/%,$(STM_BUILD_DIR)/%,$(STM_SOURCES_C:.c=.d))
 
 
 # Directories of used header files
@@ -44,8 +44,7 @@ CFLAGS = -O0 -g -Wall -Wextra $(PROCESSOR) $(INCLUDE) $(STFLAGS) -Wl,--gc-sectio
 
 SRCS = $(SRCDIR)/blinky.c
 OBJS = $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SRCS:.c=.o))
-#DEPS = $(addprefix $(INC)/, blinky.h stm32f10x_conf.h)
-#OBJ = $(BUILDDIR)/blinky.o 
+DEPENDENCIES := $(STM_DEPS) $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SRCS:.c=.d))
 ELF = $(BINDIR)/blinky.elf
 
 # Build all relevant files and create .elf
@@ -89,7 +88,6 @@ clean:
 	rm -f $(BINDIR)/*.a
 	rm -f $(BINDIR)/*.elf
 
-
 # This clever bit of make-fu builds dependency files for each source file so
 # that if the included files for that source file are updated, the object for
 # that file is also rebuilt. This rule generates a coresponding %.d file in
@@ -99,15 +97,16 @@ clean:
 # file for the rule that is generated for each source file, so that if one of
 # the headers, or the source file changes, the dependency file is also
 # rebuilt. This covers all of the necessary dependencies.
-# depend-info:
-# 	@echo "Dependency settings:\n  $(CC) $(CPREPROCFLAGS) -M -MF<DEST> -MT<DEST> -MT<SOURCEOBJ> \"<SOURCE>\""
+$(STM_BUILD_DIR)/%.d: $(STM_LIB)/%.c
+	@mkdir -p $(patsubst %/,%,$(dir $@)) # Create necessary dirs in build
+	$(CC) $(CFLAGS) -M -MF"$@" -MT"$@" -MT"$(@:.d=.o)" "$<"	
 
-# $(BUILDDIR)/%.d: $(SRCDIR)/%.$(SRCEXT) | $(BUILDDIR)
-# 	@mkdir -p $(patsubst %/,%,$(dir $@)) # Create necessary dirs in build
-# 	@echo "  DEPEND $< -> $@" && $(CC) $(CPREPROCFLAGS) -M -MF"$@" -MT"$@" -MT"$(@:.d=.o)" "$<"
+$(BUILDDIR)/%.d: $(SRCDIR)/%.c
+	@mkdir -p $(patsubst %/,%,$(dir $@)) # Create necessary dirs in build
+	$(CC) $(CFLAGS) -M -MF"$@" -MT"$@" -MT"$(@:.d=.o)" "$<"
 
 # This include will fail at first if one of the needed %.d files does not yet
 # exist, but this is NOT a problem, because 
-# include $(DEPENDENCIES)
+include $(DEPENDENCIES)
 
 

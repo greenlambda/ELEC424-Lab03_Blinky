@@ -1,16 +1,33 @@
 Lab03: Blinky
-<PUT NAMES HERE>
+Jeremy Hunt
+Christopher Buck
+9-30-14
 
 Part 1: 6
 
 Q1. What is the main role of the linker script? 
 
+The linker script tells the linker (arm-none-eabi-ld) where and how to place the compiled program. In a non-uniform memory system like a micro-controller, this script does the all important job of determining what data needs to be placed in flash and what needs to be placed in sram. The linker script tailors the linker's output for the particular platform that the program will be running on. The linker script also helps the linker determine where to place special sections like interrupt vector tables and entry section labels.
+
 Q2. What does the ENTRY command in the linker script do?
 
+The ENTRY command in the linker script tells the linker the name of the symbol where the first instruction to run at boot is located. When code is compiled, the label is left in place. The linker looks at the ENTRY command to determine what part of the code should begin the execution.
+
 Q3. Where in the STM memory map are the three ELF segments placed (i.e. flash, sram, system memory)?
+
+In the STM memory map, the three ELF segments are located at:
+Flash:			0x0800 0000
+SRAM:			0x2000 0000
+System Memory:	0x1FFF F000 (Can be aliased down to 0x0000 0000 with BOOT pins)
+
+However, this System Memory is not used by the linker or referenced in the linker script. It seems to be only used by the boot-loader.
 
 Part 2: 4
 
 Q4. What role does the startup file (startup_stm32f10x_md.s) play?
 
+The startup file (startup_stm32f10x_md.s) contains the assembly code that is FIRST run by the STM chip on startup or reset. Specifically it contains the code section Reset_Handler which is the first thing run (defined by ENTRY in the linker script). The code run by the Reset_Handler sets up the C run-time environment by zeroing out the BSS section, copying data that needs to reside in the writable data section (.data) from flash to sram, initializing the clock system, and finally calling main(). It is necessary to link this file to rest of the object files to get the system to work.
+
 Q5. Can you get the red LED to flash? Why is this harder? This is a good example of some of the challenges you will face with embedded devices and why the reference manual/STM-examples are key.
+
+It is more difficult to get the red LED to flash because this pin is multiplexed with the JTAG pin JNTRST. Be default, this pin is set up to be in the JNTRST after reboot (which is a good thing because without it the chip wouldn't be able to be reprogrammed). In order to use this pin to flash the light, the JTAG module needs to be turned completely off and the chip needs to be switched into SWD mode (a two-wire version of JTAG). This requires turning on the alternate function module in order to switch the JTAG module over to SWD mode. This gives back the red LED pin (PB4) as well as a few more pins so that they can be used as normal GPIOs.

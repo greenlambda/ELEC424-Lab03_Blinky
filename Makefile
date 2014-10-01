@@ -7,10 +7,10 @@
 STM_LIB ?= ./local_install/symlinks/stm_std_libs/
 
 # Project Directories
-INCDIR = inc/
-BINDIR = bin/
+INC = inc/
+BIN = bin/
 BUILDDIR = build/
-SRCDIR = src/
+SRC = src/
 LINKER_SCRIPT = linker_script/
 
 # Compiler 
@@ -26,7 +26,7 @@ STM_DEVICE_CORE = /Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/
 STM_DEVICE_PERIPH = /Libraries/STM32F10x_StdPeriph_Driver/
 
 # These libary sources will be built into the STM libary for linking
-STM_LIB_PKG = $(BINDIR)/libstm32f10x.a
+STM_LIB_PKG = $(BIN)/libstm32f10x.a
 STM_INCLUDES = $(addprefix -I$(STM_LIB), $(STM_CORE) $(STM_DEVICE_CORE) $(STM_DEVICE_PERIPH)/inc/)
 STM_SOURCES_ASM = $(STM_LIB)/$(STM_DEVICE_CORE)/startup/gcc_ride7/startup_stm32f10x_md.s
 STM_SOURCES = $(STM_LIB)/$(STM_CORE)/core_cm3.c \

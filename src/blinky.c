@@ -13,6 +13,21 @@
 #include "stm32f10x_conf.h"
 #include "blinky.h"
 
+
+void InitializePWMChannel()
+{
+    TIM_OCInitTypeDef outputChannelInit;
+    outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
+    outputChannelInit.TIM_Pulse = TIM2PERIOD / 8 * 7;
+    outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
+    outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
+
+    TIM_OC1Init(TIM2, &outputChannelInit);
+    TIM_OC1PreloadConfig(TIM2, TIM_OCPreload_Enable);
+
+    //GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
+}
+
 /*
  * Initialize the GPIO which controls the LED
  */
@@ -25,7 +40,7 @@ static void InitializeLEDs() {
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
 
-	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET); /* clear bit; LED on */
+	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
 }
 
 /*
@@ -43,7 +58,7 @@ static void InitializeTimer() {
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM2, &timerInitStructure);
 	TIM_Cmd(TIM2, ENABLE);
-	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+	TIM_ITConfig(TIM2, TIM_IT_Update | TIM_IT_CC1, ENABLE);
 }
 
 /*
@@ -65,6 +80,7 @@ int main() {
 	InitializeLEDs();
 	InitializeTimer();
 	EnableTimerInterrupt();
+	InitializePWMChannel();
 
 	/* Loop. Forever. */
 	for (;;) {
@@ -76,14 +92,27 @@ int main() {
  * when the timer throws an update flag.
  */
 void TIM2_IRQHandler() {
+	ITStatus updateSig,compareSig;
+	updateSig = TIM_GetITStatus(TIM2, TIM_IT_Update);
+	compareSig = TIM_GetITStatus(TIM2, TIM_IT_CC1);
+//	int timerValue1 = TIM_GetCounter(TIM2);
 	static unsigned char stateLED = 0;
-
-	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
+//	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET &&
+//		TIM_GetITStatus(TIM2, TIM_IT_CC1) != RESET) {
+//		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
+//	}
+	/* Overflow event */
+	if (updateSig != RESET) {
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update); /* clear flag */
-		if (stateLED)
-			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET);
-		else
-			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET);
-		stateLED = 1 - stateLED; /* flip the state for next operation */
+		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET); /* Turn on LED */
+		//stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
+	/* Capture Control event */
+	else if (compareSig != RESET) {
+		TIM_ClearITPendingBit(TIM2, TIM_IT_CC1); /* clear flag */
+		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
+		//stateLED = 1 - stateLED; /* flip the state for next operation */
+	}
+//	int timerValue2 = TIM_GetCounter(TIM2);
+
 }

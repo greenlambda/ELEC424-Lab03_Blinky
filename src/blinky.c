@@ -18,14 +18,21 @@ void InitializePWMChannel()
 {
     TIM_OCInitTypeDef outputChannelInit;
     outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
-    outputChannelInit.TIM_Pulse = TIM4PERIOD / 8;
+    outputChannelInit.TIM_Pulse = 0; /* Set to 0% */
     outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
     outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
 
     TIM_OC1Init(TIM4, &outputChannelInit);
     TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC2Init(TIM4, &outputChannelInit);
+    TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC3Init(TIM4, &outputChannelInit);
+    TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC4Init(TIM4, &outputChannelInit);
+    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
     //GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
+    GPIO_PinRemapConfig(GPIO_Remap_TIM4, ENABLE);
 }
 
 /*
@@ -41,6 +48,22 @@ static void InitializeLEDs() {
 	GPIO_Init(GPIOB, &gpioStructure);
 
 	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
+}
+
+/*
+ * Initialize the GPIO which controls the Motors
+ */
+static void InitializeMotors() {
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+	GPIO_InitTypeDef gpioStructure;
+	gpioStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 |
+							 GPIO_Pin_8 | GPIO_Pin_9;
+	gpioStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &gpioStructure);
+
+	//GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
 }
 
 /*
@@ -78,18 +101,48 @@ static void EnableTimerInterrupt() {
  */
 int main() {
 	InitializeLEDs();
+	InitializeMotors();
 	InitializeTimer();
 	EnableTimerInterrupt();
 	InitializePWMChannel();
 
-	/* Loop. Forever. */
+	TIM_SetCompare3(TIM4, 0);
+	TIM_SetCompare1(TIM4, TIM4PERIOD / 20);
+	/* Loop. */
 	int i;
 	for (i = 0;i < 1000000; i++) {
 		//wait
 	}
-	TIM_SetCompare1(TIM4, TIM4PERIOD / 2);
+	TIM_SetCompare1(TIM4, TIM4PERIOD / 40);
 	for (;;);
 
+}
+
+/*
+ * Set a motor to be on or off
+ * @param  m : Select the motor to set the state for
+ * 		Can be one of the following values
+ * 		Motor1, Motor2, Motor3, Motor4
+ * @param  s : Select the state for the motor
+ * 		Can be either ENABLE or DISABLE
+ */
+void setMotor(motor_t m, FunctionalState s) {
+	BitAction b = (s == ENABLE) ? Bit_SET : Bit_RESET;
+	switch (m)
+	{
+	case Motor1 :
+		GPIO_WriteBit(GPIOB, MOTOR1_PIN, b);
+		break;
+	case Motor2 :
+		GPIO_WriteBit(GPIOB, MOTOR2_PIN, b);
+		break;
+	case Motor3 :
+		GPIO_WriteBit(GPIOB, MOTOR3_PIN, b);
+		break;
+	case Motor4 :
+		GPIO_WriteBit(GPIOB, MOTOR4_PIN, b);
+		break;
+	}
 }
 
 /*
@@ -110,12 +163,16 @@ void TIM4_IRQHandler() {
 	if (updateSig != RESET) {
 		TIM_ClearITPendingBit(TIM4, TIM_IT_Update); /* clear flag */
 		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET); /* Turn on LED */
+		setMotor(Motor1, ENABLE); /* Turn on Motor */
+		setMotor(Motor2, ENABLE);
 		//stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
 	/* Capture Control event */
 	else if (compareSig != RESET) {
 		TIM_ClearITPendingBit(TIM4, TIM_IT_CC1); /* clear flag */
 		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
+		setMotor(Motor1, DISABLE); /* Turn off Motor */
+		setMotor(Motor2, DISABLE);
 		//stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
 //	int timerValue2 = TIM_GetCounter(TIM4);

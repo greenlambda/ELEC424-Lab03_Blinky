@@ -1,4 +1,4 @@
-#define TIM4PRESCALER 	40
+#define TIM4PRESCALER 	0
 #define TIM4PERIOD 		2000
 
 typedef enum {

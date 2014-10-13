@@ -32,7 +32,7 @@ void InitializePWMChannel()
     TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
     //GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
-    GPIO_PinRemapConfig(GPIO_Remap_TIM4, ENABLE);
+    //GPIO_PinRemapConfig(GPIO_Remap_TIM4, ENABLE);
 }
 
 /*
@@ -57,12 +57,15 @@ static void InitializeMotors() {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
 	GPIO_InitTypeDef gpioStructure;
-	gpioStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 |
-							 GPIO_Pin_8 | GPIO_Pin_9;
+	gpioStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
 	gpioStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
 
+	gpioStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+	gpioStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &gpioStructure);
 	//GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
 }
 
@@ -81,7 +84,7 @@ static void InitializeTimer() {
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM4, &timerInitStructure);
 	TIM_Cmd(TIM4, ENABLE);
-	TIM_ITConfig(TIM4, TIM_IT_Update | TIM_IT_CC1, ENABLE);
+	TIM_ITConfig(TIM4, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
 }
 
 /*
@@ -106,15 +109,25 @@ int main() {
 	EnableTimerInterrupt();
 	InitializePWMChannel();
 
-	TIM_SetCompare3(TIM4, 0);
+	TIM_SetCompare3(TIM4, TIM4PERIOD / 10);
+	TIM_SetCompare2(TIM4, TIM4PERIOD / 5);
+	TIM_SetCompare4(TIM4, TIM4PERIOD / 10);
 	TIM_SetCompare1(TIM4, TIM4PERIOD / 20);
 	/* Loop. */
 	int i;
 	for (i = 0;i < 1000000; i++) {
 		//wait
 	}
-	TIM_SetCompare1(TIM4, TIM4PERIOD / 40);
-	for (;;);
+	TIM_SetCompare2(TIM4, 1);
+	TIM_SetCompare1(TIM4, TIM4PERIOD / 10);
+	for (i = 0;i < 3000000; i++) {
+			//wait
+	}
+	TIM_SetCompare1(TIM4, TIM4PERIOD / 5);
+	TIM_SetCompare3(TIM4, 0);
+	TIM_SetCompare4(TIM4, 0);
+	for (i = 0;i < 1000000; i++);
+	TIM_SetCompare1(TIM4, 1);
 
 }
 
@@ -150,9 +163,9 @@ void setMotor(motor_t m, FunctionalState s) {
  * when the timer throws an update flag.
  */
 void TIM4_IRQHandler() {
-	ITStatus updateSig,compareSig;
-	updateSig = TIM_GetITStatus(TIM4, TIM_IT_Update);
-	compareSig = TIM_GetITStatus(TIM4, TIM_IT_CC1);
+	//ITStatus updateSig,compareSig;
+	//updateSig = TIM_GetITStatus(TIM4, TIM_IT_Update);
+	//compareSig = TIM_GetITStatus(TIM4, TIM_IT_CC1);
 //	int timerValue1 = TIM_GetCounter(TIM4);
 	static unsigned char stateLED = 0;
 //	if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET &&
@@ -160,7 +173,7 @@ void TIM4_IRQHandler() {
 //		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
 //	}
 	/* Overflow event */
-	if (updateSig != RESET) {
+	if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET) {
 		TIM_ClearITPendingBit(TIM4, TIM_IT_Update); /* clear flag */
 		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_RESET); /* Turn on LED */
 		setMotor(Motor1, ENABLE); /* Turn on Motor */
@@ -168,13 +181,20 @@ void TIM4_IRQHandler() {
 		//stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
 	/* Capture Control event */
-	else if (compareSig != RESET) {
-		TIM_ClearITPendingBit(TIM4, TIM_IT_CC1); /* clear flag */
-		GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
-		setMotor(Motor1, DISABLE); /* Turn off Motor */
-		setMotor(Motor2, DISABLE);
-		//stateLED = 1 - stateLED; /* flip the state for next operation */
+	if (TIM_GetITStatus(TIM4, TIM_IT_CC1) != RESET) {
+			TIM_ClearITPendingBit(TIM4, TIM_IT_CC1); /* clear flag */
+			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
+			setMotor(Motor1, DISABLE); /* Turn off Motor */
+	//		setMotor(Motor1, DISABLE);
+			//stateLED = 1 - stateLED; /* flip the state for next operation */
 	}
+	if (TIM_GetITStatus(TIM4, TIM_IT_CC2) != RESET) {
+			TIM_ClearITPendingBit(TIM4, TIM_IT_CC2); /* clear flag */
+			GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* Turn off LED */
+			setMotor(Motor2, DISABLE); /* Turn off Motor */
+	//		setMotor(Motor1, DISABLE);
+			//stateLED = 1 - stateLED; /* flip the state for next operation */
+		}
 //	int timerValue2 = TIM_GetCounter(TIM4);
 
 }

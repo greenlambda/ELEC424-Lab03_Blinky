@@ -22,14 +22,19 @@ void InitializePWMChannel()
     outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
     outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
 
-    TIM_OC1Init(TIM4, &outputChannelInit);
-    TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
-    TIM_OC2Init(TIM4, &outputChannelInit);
-    TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    //Motors 3&4
     TIM_OC3Init(TIM4, &outputChannelInit);
     TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
     TIM_OC4Init(TIM4, &outputChannelInit);
     TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    //Motors 1&2
+    TIM_OC3Init(TIM3, &outputChannelInit);
+    TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable);
+    TIM_OC4Init(TIM3, &outputChannelInit);
+    TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
+
+    //TIM_CtrlPWMOutputs(TIM3, ENABLE);
+    //TIM_CtrlPWMOutputs(TIM4, ENABLE);
 
     //GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
     //GPIO_PinRemapConfig(GPIO_Remap_TIM4, ENABLE);
@@ -54,11 +59,11 @@ static void InitializeLEDs() {
  * Initialize the GPIO which controls the Motors
  */
 static void InitializeMotors() {
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB, ENABLE);
 
 	GPIO_InitTypeDef gpioStructure;
 	gpioStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
-	gpioStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	gpioStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
 
@@ -66,6 +71,8 @@ static void InitializeMotors() {
 	gpioStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
+
+	//GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 	//GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
 }
 
@@ -77,14 +84,26 @@ static void InitializeTimer() {
 	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); /* set clock to HSE */
 
 	TIM_TimeBaseInitTypeDef timerInitStructure;
-	timerInitStructure.TIM_Prescaler = TIM4PRESCALER;
+	timerInitStructure.TIM_Prescaler = TIM_PRESCALER;
 	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	timerInitStructure.TIM_Period = TIM4PERIOD;
+	timerInitStructure.TIM_Period = TIM_PERIOD;
 	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM4, &timerInitStructure);
 	TIM_Cmd(TIM4, ENABLE);
-	TIM_ITConfig(TIM4, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
+	//TIM_ITConfig(TIM4, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+	//TIM_TimeBaseInitTypeDef timerInitStructure;
+	timerInitStructure.TIM_Prescaler = TIM_PRESCALER;
+	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	timerInitStructure.TIM_Period = TIM_PERIOD;
+	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	timerInitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM3, &timerInitStructure);
+	TIM_Cmd(TIM3, ENABLE);
+
 }
 
 /*
@@ -109,26 +128,27 @@ int main() {
 	EnableTimerInterrupt();
 	InitializePWMChannel();
 
-	TIM_SetCompare3(TIM4, TIM4PERIOD / 10);
-	TIM_SetCompare2(TIM4, TIM4PERIOD / 5);
-	TIM_SetCompare4(TIM4, TIM4PERIOD / 10);
-	TIM_SetCompare1(TIM4, TIM4PERIOD / 20);
+	TIM_SetCompare3(TIM4, TIM_PERIOD / 10);
+	TIM_SetCompare4(TIM3, TIM_PERIOD / 5);
+	TIM_SetCompare4(TIM4, TIM_PERIOD / 10);
+	TIM_SetCompare3(TIM3, TIM_PERIOD / 20);
 	/* Loop. */
 	int i;
-	for (i = 0;i < 1000000; i++) {
+	for (i = 0;i < 500000; i++) {
 		//wait
 	}
-	TIM_SetCompare2(TIM4, 1);
-	TIM_SetCompare1(TIM4, TIM4PERIOD / 10);
-	for (i = 0;i < 3000000; i++) {
+	TIM_SetCompare4(TIM3, 1);
+	TIM_SetCompare3(TIM4, TIM_PERIOD / 10);
+	for (i = 0;i < 1500000; i++) {
 			//wait
 	}
-	TIM_SetCompare1(TIM4, TIM4PERIOD / 5);
+	TIM_SetCompare3(TIM4, TIM_PERIOD / 5);
 	TIM_SetCompare3(TIM4, 0);
 	TIM_SetCompare4(TIM4, 0);
-	for (i = 0;i < 1000000; i++);
-	TIM_SetCompare1(TIM4, 1);
-
+	for (i = 0;i < 500000; i++);
+	TIM_SetCompare3(TIM3, 1);
+	TIM_SetCompare4(TIM3, 1);
+	for (;;);
 }
 
 /*

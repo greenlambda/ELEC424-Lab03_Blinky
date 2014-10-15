@@ -1,5 +1,5 @@
-#define TIM4PRESCALER 	0
-#define TIM4PERIOD 		2000
+#define TIM_PRESCALER 	0
+#define TIM_PERIOD 		2000
 
 typedef enum {
 	Motor1, Motor2, Motor3, Motor4

@@ -44,7 +44,7 @@ void InitializePWMChannel()
  * Initialize the GPIO which controls the LED
  */
 static void InitializeLEDs() {
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB, ENABLE);
 
 	GPIO_InitTypeDef gpioStructure;
 	gpioStructure.GPIO_Pin = GPIO_Pin_5;
@@ -52,7 +52,14 @@ static void InitializeLEDs() {
 	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &gpioStructure);
 
-	GPIO_WriteBit(GPIOB, GPIO_Pin_5, Bit_SET); /* set bit; LED off */
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_NoJTRST, ENABLE);
+
+	gpioStructure.GPIO_Pin = GPIO_Pin_4;
+	gpioStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	gpioStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &gpioStructure);
+
+	GPIO_WriteBit(GPIOB, GPIO_Pin_4, Bit_RESET); /* set bit; LED off */
 }
 
 /*
@@ -122,12 +129,13 @@ static void EnableTimerInterrupt() {
  * Main function.  Initializes the GPIO, Timers, and
  */
 int main() {
+	int i;
+	for (i = 0;i < 1500000; i++);
 	InitializeLEDs();
 	InitializeMotors();
 	InitializeTimer();
 	EnableTimerInterrupt();
 	InitializePWMChannel();
-	int i;
 
 	setMotor(Motor1, 25);
 	for (i = 0;i < 500000; i++);
@@ -161,7 +169,6 @@ void setMotor(motor_t m, int duty) {
 	//MULT: preprocessor define -
 	//multiplier to convert speed to units in
 	//terms of the timer period
-
 	int pulse = duty * MULT;	//pulse width (in ticks) to achieve the
 								//desired duty cycle
 	switch (m)

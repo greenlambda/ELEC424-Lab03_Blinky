@@ -127,27 +127,25 @@ int main() {
 	InitializeTimer();
 	EnableTimerInterrupt();
 	InitializePWMChannel();
-
-	TIM_SetCompare3(TIM4, TIM_PERIOD / 10);
-	TIM_SetCompare4(TIM3, TIM_PERIOD / 5);
-	TIM_SetCompare4(TIM4, TIM_PERIOD / 10);
-	TIM_SetCompare3(TIM3, TIM_PERIOD / 20);
-	/* Loop. */
 	int i;
-	for (i = 0;i < 500000; i++) {
-		//wait
-	}
-	TIM_SetCompare4(TIM3, 1);
-	TIM_SetCompare3(TIM4, TIM_PERIOD / 10);
-	for (i = 0;i < 1500000; i++) {
-			//wait
-	}
-	TIM_SetCompare3(TIM4, TIM_PERIOD / 5);
-	TIM_SetCompare3(TIM4, 0);
-	TIM_SetCompare4(TIM4, 0);
+
+	setMotor(Motor1, 25);
 	for (i = 0;i < 500000; i++);
-	TIM_SetCompare3(TIM3, 1);
-	TIM_SetCompare4(TIM3, 1);
+	setMotor(Motor2, 25);
+	for (i = 0;i < 500000; i++);
+	setMotor(Motor3, 25);
+	for (i = 0;i < 500000; i++);
+	setMotor(Motor4, 25);
+	for (i = 0;i < 500000; i++);
+
+	setMotor(Motor1, 0);
+	for (i = 0;i < 500000; i++);
+	setMotor(Motor2, 0);
+	for (i = 0;i < 500000; i++);
+	setMotor(Motor3, 0);
+	for (i = 0;i < 500000; i++);
+	setMotor(Motor4, 0);
+	for (i = 0;i < 500000; i++);
 	for (;;);
 }
 
@@ -156,24 +154,29 @@ int main() {
  * @param  m : Select the motor to set the state for
  * 		Can be one of the following values
  * 		Motor1, Motor2, Motor3, Motor4
- * @param  s : Select the state for the motor
- * 		Can be either ENABLE or DISABLE
+ * @param  s : Select the speed for the motor
+ * 		Can be between 0 and 100
  */
-void setMotor(motor_t m, FunctionalState s) {
-	BitAction b = (s == ENABLE) ? Bit_SET : Bit_RESET;
+void setMotor(motor_t m, int duty) {
+	//MULT: preprocessor define -
+	//multiplier to convert speed to units in
+	//terms of the timer period
+
+	int pulse = duty * MULT;	//pulse width (in ticks) to achieve the
+								//desired duty cycle
 	switch (m)
 	{
 	case Motor1 :
-		GPIO_WriteBit(GPIOB, MOTOR1_PIN, b);
+		MOTOR1_SET_COMPARE(MOTOR1_TIM, pulse);
 		break;
 	case Motor2 :
-		GPIO_WriteBit(GPIOB, MOTOR2_PIN, b);
+		MOTOR2_SET_COMPARE(MOTOR2_TIM, pulse);
 		break;
 	case Motor3 :
-		GPIO_WriteBit(GPIOB, MOTOR3_PIN, b);
+		MOTOR3_SET_COMPARE(MOTOR3_TIM, pulse);
 		break;
 	case Motor4 :
-		GPIO_WriteBit(GPIOB, MOTOR4_PIN, b);
+		MOTOR4_SET_COMPARE(MOTOR4_TIM, pulse);
 		break;
 	}
 }
